@@ -11,10 +11,6 @@
 
 /*------------------------------------------------------------*/
 
-#define EMPTY_SPACE_COUNT 6
-
-/*------------------------------------------------------------*/
-
 void renderGrid(int empty[], int cells[], int selector);
 void fillCells(int cells[]);
 void moveSelector(int move, int *selector);
