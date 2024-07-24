@@ -1,12 +1,18 @@
-// Created by Earl James Williams Aliñgasa (NeoTSZ on GitHub).
+// Created by Earl James Williams Aliñgasa (NeoTSZ).
 
-// Header file libraries
+/*
+The following members of the Low Level Learning Discord server also helped improve the program:
+- [gerogaga] for their suggestions regarding enumeration, notation, and precedence.
+- [Ema] for their suggestions of optimization.
+*/
+
+// Header File Libraries
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
 #include <time.h>
 
-// Color macros
+// Color Macros
 #define DECOLOR "\x1b[0m"
 #define RED "\x1b[91m"
 #define GREEN "\x1b[92m"
@@ -14,92 +20,102 @@
 #define PINK "\x1b[95m"
 #define CYAN "\x1b[96m"
 
-// Size macros
+// Size Macro
 #define CELL_COUNT 81
-#define GRID_WIDTH 9
 
-// Control macros
-#define CLEAR "\x1b[2J\x1b[H"
-#define HOME "\x1b[2;2H"
-#define SAVE "\x1b[s"
-#define LOAD "\x1b[u"
-#define HIDE "\x1b[?25l"
-#define SHOW "\x1b[?25h"
+// Control Macros
+#define CLEAR_SCREEN "\x1b[2J\x1b[1;1H"
+#define AT_HOME "\x1b[2;2H"
+#define AT_CONTROLS "\x1b[2;40H"
+#define AT_DIFFICULTY "\x1b[18;40H"
+#define AT_EXIT "\x1b[20;1H"
+#define SAVE_CURSOR "\x1b[s"
+#define LOAD_CURSOR "\x1b[u"
+#define HIDE_CURSOR "\x1b[?25l"
+#define SHOW_CURSOR "\x1b[?25h"
 
-// Movement macros
-#define UP "\x1b[1A"
-#define DOWN "\x1b[1B"
-#define RIGHT "\x1b[1C"
-#define LEFT "\x1b[1D"
+// Cursor Movement Macros
+#define CURSOR_UP "\x1b[1A"
+#define CURSOR_DOWN "\x1b[1B"
+#define CURSOR_RIGHT "\x1b[1C"
+#define CURSOR_LEFT "\x1b[1D"
 
-// Character codes
-// C9[╔] CD[═] D1[╤] CB[╦] BB[╗] BA[║]
-// B3[│] C7[╟] C4[─] C5[┼] D7[╫] B6[╢]
-// CC[╠] D8[╪] CE[╬] B9[╣] C8[╚] CF[╧]
-// CA[╩] BC[╝]
+// Line Setup Macros
+#define LINKER(X,Y) #X #X #X #Y #X #X #X #Y #X #X #X
+#define LINE_SETTER(A,B,C,D,E) #A LINKER(B, C) #D LINKER(B, C) #D LINKER(B, C) #E "\n"
 
-// Setup macros
-#define LINK(X, Y) #X #X #X #Y #X #X #X #Y #X #X #X
-#define LINE(A, B, C, D, E) #A LINK(B, C) #D LINK(B, C) #D LINK(B, C) #E "\n"
+// Grid Line Macros
+#define TOP_BORDER LINE_SETTER(\xC9,\xCD,\xD1,\xCB,\xBB)
+#define BOTTOM_BORDER LINE_SETTER(\xC8,\xCD,\xCF,\xCA,\xBC)
+#define THICK_DIVIDER LINE_SETTER(\xCC,\xCD,\xD8,\xCE,\xB9)
+#define THIN_DIVIDER LINE_SETTER(\xC7,\xC4,\xC5,\xD7,\xB6)
+#define CELL_LINE LINE_SETTER(\xBA,\xFF,\xB3,\xBA,\xBA)
 
-// Line macros
-#define TOP LINE(\xC9,\xCD,\xD1,\xCB,\xBB)
-#define BOTTOM LINE(\xC8,\xCD,\xCF,\xCA,\xBC)
-#define THICK LINE(\xCC,\xCD,\xD8,\xCE,\xB9)
-#define CELLS LINE(\xBA,\xFF,\xB3,\xBA,\xBA)
-#define THIN LINE(\xC7,\xC4,\xC5,\xD7,\xB6)
+// Printing Macros
+#define CELL_GROUP CELL_LINE THIN_DIVIDER CELL_LINE THIN_DIVIDER CELL_LINE
+#define SUDOKU_GRID TOP_BORDER CELL_GROUP THICK_DIVIDER CELL_GROUP THICK_DIVIDER CELL_GROUP BOTTOM_BORDER
+#define SELECT SAVE_CURSOR PINK "\xdd" CURSOR_RIGHT "\xde" DECOLOR LOAD_CURSOR
+#define DESELECT SAVE_CURSOR "\xff" CURSOR_RIGHT "\xff" LOAD_CURSOR
+#define BUTTON(X,Y) SAVE_CURSOR CYAN #X "\x1b[3C" DECOLOR #Y LOAD_CURSOR CURSOR_DOWN
 
-// Printing macros
-#define GROUP CELLS THIN CELLS THIN CELLS
-#define GRID TOP GROUP THICK GROUP THICK GROUP BOTTOM
-#define SELECT SAVE PINK "{" RIGHT "}" LOAD DECOLOR
-#define DESELECT SAVE "\xff" RIGHT "\xff" LOAD
-#define BUTTON(X, Y) SAVE CYAN #X "\xff" DECOLOR #Y LOAD DOWN
-
+// Difficulty Counts
 enum difficulties
 {
-    TEST = 3,
+    TEST =  3,
     EASY = 12,
     MEDIUM = 24,
     HARD = 36
 };
 
-// Structure to hold the state of the game
+// User Movement Inputs
+enum userInputs
+{
+    INPUT_UP = 5,
+    INPUT_DOWN = 2,
+    INPUT_RIGHT = 3,
+    INPUT_LEFT = 1
+};
+
+// Game-State Structure
 typedef struct Game
 {
     int cells[CELL_COUNT];
-    int copy[CELL_COUNT];
-    int clone[CELL_COUNT];
-    int cursor;
+    int marker[CELL_COUNT];
+    int checker[CELL_COUNT];
+    int selector;
     int difficulty;
-} Game;
+}
+Game;
 
 // Prototypes
-void removeBlockers(Game *game);
-void blockLines(int index, Game *game);
-int fillBox(int box, int digit, Game *game);
-int fillCells(Game *game);
-void applyDifficulty(Game *game);
-void initializeGame(Game *game);
-void printDigits(Game game);
-void drawGrid(Game game);
-void putDigit(int digit, Game *game);
-void pullDigit(Game* game);
-void processInput(char input, Game *game);
-void moveCursor(int move, Game *game);
-void checkSolution(Game* game);
-void resetGame(Game* game);
-void changeDifficulty(Game* game);
+void pullBlockers(int* cells);
+void putBlockers(int index, int* cells);
+int putBoxDigit(int boxIndex, int digit, int* cells);
+int populateCells(int* cells);
+void applyDifficulty(int count, int* cells, int* marker);
+void initializeGame(Game* game);
+void printDigits(int* cells);
+void printButtons();
+void enterDigit(int digit, int selector, int* marker, int* cells);
+void moveSelector(int move, int* selector);
+void resetSudoku(Game* game);
+void checkSudoku(Game* game);
+void processInput(char input, Game* game);
 
 int main(void)
 {
     Game game;
 
-    // Setting up the game
+    // Setting up the game.
     game.difficulty = EASY;
     srand(time(0));
     initializeGame(&game);
-    drawGrid(game);
+
+    // Printing the game.
+    printf(CLEAR_SCREEN HIDE_CURSOR SUDOKU_GRID);
+    printButtons();
+    printDigits(game.cells);
+    printf(AT_HOME SELECT HIDE_CURSOR);
 
     // Looping the game
     while (1)
@@ -111,256 +127,316 @@ int main(void)
     return 0;
 }
 
-// Function to remove all the blockers placed by blockLines()
-void removeBlockers(Game *game)
+// Removes the blockers placed by putBlockers().
+void pullBlockers(int* cells)
 {
-    // The blockers are represented by 10
-    // They get reset to 0
-
-    for (int i = 0; i < CELL_COUNT; i++)
-        *(game->cells + i) -= (*(game->cells + i) == 10) ? 10 : 0;
+    // The blockers are represented by 10.
+    // They get reset to 0.
+    for (int i = 0; i < CELL_COUNT; i ++)
+        cells[i] -= (cells[i] == 10) ? 10 : 0;
 
     return;
 }
 
-// Function to block the row and column of a certain index
-void blockLines(int index, Game *game)
+// Blocks the empty cells in the same row and column as a given index.
+void putBlockers(int index, int* cells)
 {
-    // Getting position indices relatives to the index
-    int top = index % 9;
-    int left = index - top;
-    int bottom = top + 72;
-    int right = left + 8;
+    // Getting position indices relatives to the index.
+    int topEnd = index % 9;
+    int leftEnd = index - topEnd;
+    int bottomEnd = topEnd + 72;
+    int rightEnd = leftEnd + 8;
 
-    // Blocking the empty slots in the same row
-    for (int i = left; i <= right; i++)
-        *(game->cells + i) += (*(game->cells + i) == 0) ? 10 : 0;
+    // Blocking the empty cells in the same row.
+    for (int i = leftEnd; i <= rightEnd; i ++)
+        cells[i] += (cells[i] == 0) ? 10 : 0;
 
-    // Blocking the empty slots in the same column
-    for (int i = top; i <= bottom; i += 9)
-        *(game->cells + i) += (*(game->cells + i) == 0) ? 10 : 0;
+    // Blocking the empty cells in the same column.
+    for (int i = topEnd; i <= bottomEnd; i += 9)
+        cells[i] += (cells[i] == 0) ? 10 : 0;
 
     return;
 }
 
-// Function to fill a box with a certain number
-int fillBox(int box, int digit, Game *game)
+// Puts a given digit in a given box.
+int putBoxDigit(int boxIndex, int digit, int* cells)
 {
     int emptyCount = 0;
 
-    // Counting the number of empty spaces within a box
-    for (int i = box; i < box + 21;)
+    // Counting the number of empty cells in the box.
+    for (int i = boxIndex; i < boxIndex + 21;)
     {
-        emptyCount += (*(game->cells + i) == 0) ? 1 : 0;
-
-        i += (i == box + 2 || i == box + 11) ? 7 : 1;
+        emptyCount += (cells[i] == 0) ? 1 : 0;
+        i += (i == boxIndex + 2 || i == boxIndex + 11) ? 7 : 1;
     }
 
-    // Flagging an error if there are no empty slots in the box
+    // Returning an error if there are no empty cells.
     if (!emptyCount)
         return 1;
 
     int randomCount = rand() % emptyCount;
 
-    // Using randomCount to choose a spot for the digit
-    for (int i = box; i < box + 21;)
+    // Using randomCount to choose an empty cell.
+    for (int i = boxIndex; i < boxIndex + 21;)
     {
-        if (*(game->cells + i) == 0)
+        // Checking if the empty cell is met.
+        if (!cells[i] && !randomCount)
         {
-            // Checking if the chosen spot is reached
-            if (randomCount == 0)
-            {
-                *(game->cells + i) = digit;
-                blockLines(i, game);
-                return 0;
-            }
-            else
-                randomCount--;
+            cells[i] = digit;
+            putBlockers(i, cells);
+
+            return 0;
         }
+        else if (!cells[i] && randomCount)
+            randomCount --;
 
-        i += (i == box + 2 || i == box + 11) ? 7 : 1;
-    }
-}
-
-// Function to distribute a digit in the grid randomly
-int fillCells(Game *game)
-{
-    // Filling the cells with zeros
-    for (int i = 0; i < CELL_COUNT; i++)
-        *(game->cells + i) = 0;
-
-    for (int i = 1; i < 10; i++)
-    {
-        int errorFlag = 0;
-
-        // Filling the boxes diagonally
-        errorFlag += fillBox(0, i, game);
-        errorFlag += fillBox(30, i, game);
-        errorFlag += fillBox(60, i, game);
-
-        // Filling the boxes in the top-right corner
-        errorFlag += fillBox(3, i, game);
-        errorFlag += fillBox(33, i, game);
-        errorFlag += fillBox(6, i, game);
-
-        // Filling the boxes in the bottom-left corner
-        errorFlag += fillBox(27, i, game);
-        errorFlag += fillBox(57, i, game);
-        errorFlag += fillBox(54, i, game);
-
-        if (errorFlag)
-            return 1;
-        else
-            removeBlockers(game);
+        i += (i == boxIndex + 2 || i == boxIndex + 11) ? 7 : 1;
     }
 
     return 0;
 }
 
-// Function to empty out random cells
-void applyDifficulty(Game *game)
+// Randomly populates grid cells with digits.
+int populateCells(int* cells)
 {
-    int count = game->difficulty;
+    // The boxes are chosen in this order to ensure good chances of populating the cells.
+    int boxIndices[9] = {0, 30, 60, 3, 33, 6, 27, 57, 54};
 
-    // Removing as many cells as indicated by count
+    // Resetting all the cells.
+    for (int i = 0; i < CELL_COUNT; i ++)
+        cells[i] = 0;
+
+    // Filling the digits in sequence.
+    for (int i = 1; i < 10; i ++)
+    {
+        for (int j = 0; j < 9; j ++)
+        {
+            if (putBoxDigit(boxIndices[j], i, cells))
+                return 1;
+        }
+
+        pullBlockers(cells);
+    }
+
+    return 0;
+}
+
+// Randomly removes cells according to difficulty count.
+void applyDifficulty(int count, int* cells, int* marker)
+{
     while (count)
     {
         int randomIndex = rand() % 81;
 
-        // Making sure the randomly chosen spot is not already empty
-        while (*(game->cells + randomIndex) == 0)
+        // Making sure the randomly chosen spot is non-empty.
+        while (!cells[randomIndex])
             randomIndex = rand() % 81;
 
-        *(game->cells + randomIndex) = 0;
-        *(game->copy + randomIndex) = 0;
-        count--;
+        cells[randomIndex] = 0;
+        marker[randomIndex] = 0;
+        count --;
     }
 
     return;
 }
 
-// Function to initialize the game structure
-void initializeGame(Game *game)
+// Initializes the game structure.
+void initializeGame(Game* game)
 {
-    game->cursor = 0;
+    game->selector = 0;
 
-    while (fillCells(game));
+    // Repeatedly attempting to populate the cells until success is achieved.
+    while (populateCells(game->cells));
 
-    // Copying the grid into clone[] and copy[]
-    for (int i = 0; i < CELL_COUNT; i++)
+    // Copying the content of cells[] over to marker[] and checker[].
+    for (int i = 0; i < CELL_COUNT; i ++)
     {
-        *(game->clone + i) = *(game->cells + i);
-        *(game->copy + i) = *(game->cells + i);
+        game->marker[i] = game->cells[i];
+        game->checker[i] = game->cells[i];
     }
 
-    applyDifficulty(game);
+    applyDifficulty(game->difficulty, game->cells, game->marker);
 
     return;
 }
 
-// Function to place numbers within the grid
-void printDigits(Game game)
+// Prints the cell values onto the grid.
+void printDigits(int* cells)
 {
-    printf(HOME SAVE);
+    printf(AT_HOME SAVE_CURSOR);
 
-    for (int i = 0; i < CELL_COUNT; i++)
+    for (int i = 0; i < CELL_COUNT; i ++)
     {
-        int temp = *(game.cells + i);
-
-        printf(RIGHT);
-        if (!temp)
-            printf("\xff");
+        // Printing non-zero cell values.
+        if (!cells[i])
+            printf(CURSOR_RIGHT "\xff");
         else
-            printf("%d", temp);
-        printf(RIGHT RIGHT);
+            printf(CURSOR_RIGHT "%d", cells[i]);
 
-        // Moving to the next line
         if (i % 9 == 8)
-            printf(LOAD DOWN DOWN SAVE);
+            printf(LOAD_CURSOR CURSOR_DOWN CURSOR_DOWN SAVE_CURSOR);
+        else
+            printf(CURSOR_RIGHT CURSOR_RIGHT);
     }
+}
+
+// Prints the controls of the game onto the right side of the grid.
+void printButtons()
+{
+    // Printing the number controls.
+    printf(AT_CONTROLS SAVE_CURSOR);
+    printf(BUTTON(1-9\b\b,Enter Digit) BUTTON(0,Remove Digit));
+
+    // Printing the movement controls.
+    printf(CURSOR_DOWN BUTTON(W,Move Up) BUTTON(S,Move Down) BUTTON(D,Move Right) BUTTON(A,Move Left));
+
+    // Printing current Sudoku options.
+    printf(CURSOR_DOWN BUTTON(R,Reset Sudoku) BUTTON(C,Check Sudoku));
+
+    // Printing new Sudoku options.
+    printf(CURSOR_DOWN BUTTON(N,New Sudoku) BUTTON(X,Change Difficulty));
+
+    // Printing end option and difficulty.
+    printf(CURSOR_DOWN BUTTON(E,Exit Game));
+    printf(CURSOR_DOWN "Difficulty: " YELLOW "EASY" DECOLOR);
 
     return;
 }
 
-// Function to draw the grid and controls
-void drawGrid(Game game)
+// Prints a digit onto the grid if the cell being selected is empty.
+void enterDigit(int digit, int selector, int* marker, int* cells)
 {
-    // Printing the grid
-    printf(CLEAR GRID);
-
-    printDigits(game);
-
-    // Printing the controls
-    printf("\x1b[2;39H" BUTTON([1-9], Enter Number) BUTTON([ 0 ],Remove Number));
-    printf(DOWN SAVE BUTTON([ W ], Move Up) BUTTON([ S ], Move Down) BUTTON([ D ], Move Right) BUTTON([ A ], Move Left) );
-    printf(DOWN SAVE BUTTON([ R ],Reset Sudoku) BUTTON([ C ],Check Solution));
-    printf(DOWN SAVE BUTTON([ N ],New Sudoku) BUTTON([ X ], Change Difficulty));
-    printf(DOWN SAVE BUTTON([ E ], Exit Sudoku));
-
-    // Printing the difficulty and resetting the cursor
-    printf("\x1b[18;39H" "Difficulty: " YELLOW "EASY");
-    printf(DECOLOR HOME SELECT HIDE);
-
-    return;
-}
-
-// Function to put a number onto the grid
-void putDigit(int digit, Game *game)
-{
-    int index = game->cursor;
-
-    if (*(game->copy + index) != 0)
+    // Checking if the cell is nonempty.
+    if (marker[selector])
         return;
 
-    *(game->cells + index) = digit;
-    printf(SAVE PINK RIGHT "%d" LOAD DECOLOR, digit);
+    // Proceeding if the cell is empty.
+    cells[selector] = digit;
+
+    if (digit == 0)
+        printf(SAVE_CURSOR CURSOR_RIGHT "\xff" LOAD_CURSOR);
+    else
+        printf(SAVE_CURSOR CURSOR_RIGHT PINK "%d" DECOLOR LOAD_CURSOR, digit);
 
     return;
 }
 
-// Function to pull a number from the grid
-void pullDigit(Game* game)
+// Moves the cell selector according to user input.
+void moveSelector(int move, int* selector)
 {
-    if (*(game->copy + game->cursor) == 0)
+    printf(DESELECT);
+
+    // Processing move and adjusting the selector accordingly.
+    switch (move)
     {
-        *(game->cells + game->cursor) = 0;
-        printf(SAVE RIGHT "\xff" LOAD);
+    case INPUT_UP:
+        if (*selector > 8)
+        {
+            *selector -= 9;
+            printf(CURSOR_UP CURSOR_UP);
+        }
+        break;
+
+    case INPUT_DOWN:
+        if (*selector < 72)
+        {
+            *selector += 9;
+            printf(CURSOR_DOWN CURSOR_DOWN);
+        }
+        break;
+
+    case INPUT_RIGHT:
+        if (*selector % 9 != 8)
+        {
+            ++ *selector;
+            printf(CURSOR_RIGHT CURSOR_RIGHT CURSOR_RIGHT CURSOR_RIGHT);
+        }
+        break;
+
+    case INPUT_LEFT:
+        if (*selector % 9 != 0)
+        {
+            -- *selector;
+            printf(CURSOR_LEFT CURSOR_LEFT CURSOR_LEFT CURSOR_LEFT);
+        }
+        break;
     }
 
+    printf(SELECT);
+
     return;
 }
 
-// Function to process continuous keyboard inputs via <conio.h>
-void processInput(char input, Game *game)
+// Resets all the user-inputted digits.
+void resetSudoku(Game* game)
+{
+    // Resetting the selector.
+    game->selector = 0;
+    printf(DESELECT AT_HOME SAVE_CURSOR);
+
+    // Removing all the user-inputted digits.
+    for (int i = 0; i < CELL_COUNT; i ++)
+    {
+        if (game->marker[i] == 0)
+        {
+            game->cells[i] = 0;
+            printf(CURSOR_RIGHT "\xff");
+        }
+        else
+            printf(CURSOR_RIGHT CURSOR_RIGHT);
+
+        if (i % 9 == 8)
+            printf(LOAD_CURSOR CURSOR_DOWN CURSOR_DOWN SAVE_CURSOR);
+        else
+            printf(CURSOR_RIGHT CURSOR_RIGHT);
+    }
+
+    printf(AT_HOME SELECT SAVE_CURSOR);
+
+    return;
+}
+
+// Checks all the user-inputted digits.
+void checkSudoku(Game* game)
+{
+    // Resetting the selector.
+    game->selector = 0;
+    printf(DESELECT AT_HOME SAVE_CURSOR);
+
+    // Processing all the user-inputted digits.
+    for (int i = 0; i < CELL_COUNT; i ++)
+    {
+        if (game->marker[i] == 0)
+        {
+            game->marker[i] = 10;
+
+            if (!game->cells[i])
+                printf(YELLOW CURSOR_RIGHT "%d" DECOLOR, game->checker[i]);
+            else if (game->cells[i] == game->checker[i])
+                printf(GREEN CURSOR_RIGHT "%d" DECOLOR, game->cells[i]);
+            else
+                printf(RED CURSOR_RIGHT "%d" DECOLOR, game->cells[i]);
+        }
+        else
+            printf(CURSOR_RIGHT CURSOR_RIGHT);
+
+        if (i % 9 == 8)
+            printf(LOAD_CURSOR CURSOR_DOWN CURSOR_DOWN SAVE_CURSOR);
+        else
+            printf(CURSOR_RIGHT CURSOR_RIGHT);
+    }
+
+    printf(AT_HOME SELECT SAVE_CURSOR);
+
+    return;
+}
+
+// Processes all user inputs during the game loop.
+void processInput(char input, Game* game)
 {
     switch (input)
     {
-    case 'w': // Move the cursor up
-    case 'W':
-        moveCursor(5, game);
-        break;
-
-    case 's': // Move the cursor down
-    case 'S':
-        moveCursor(2, game);
-        break;
-
-    case 'd': // Move the cursor right
-    case 'D':
-        moveCursor(3, game);
-        break;
-
-    case 'a': // Move the cursor left
-    case 'A':
-        moveCursor(1, game);
-        break;
-
-    case 'e': // Exit the game
-    case 'E':
-        printf(SHOW "\x1b[20;1H");
-        exit(0);
-
-    // Before passing by value, the character is casted to an integer according to its ASCII code
+    case '0':
     case '1':
     case '2':
     case '3':
@@ -370,186 +446,71 @@ void processInput(char input, Game *game)
     case '7':
     case '8':
     case '9':
-        putDigit((int)(input - 48), game);
+        enterDigit((int)(input - 48), game->selector, game->marker, game->cells);
         break;
 
-    case 'c': // Checking the entered solution
-    case 'C':
-        checkSolution(game);
+    case 'w':
+    case 'W':
+        moveSelector(INPUT_UP, &game->selector);
         break;
 
-    case 'x': // Changing the difficulty
-    case 'X':
-        changeDifficulty(game);
-
-    case 'n': // Starting a new game
-    case 'N':
-        printf(DESELECT);
-        initializeGame(game);
-        printDigits(*game);
-        printf(HOME SELECT);
+    case 's':
+    case 'S':
+        moveSelector(INPUT_DOWN, &game->selector);
         break;
 
-    case 'r': // Resetting the game
+    case 'd':
+    case 'D':
+        moveSelector(INPUT_RIGHT, &game->selector);
+        break;
+
+    case 'a':
+    case 'A':
+        moveSelector(INPUT_LEFT, &game->selector);
+        break;
+
+    case 'r':
     case 'R':
-        resetGame(game);
+        resetSudoku(game);
         break;
 
-    case '0': // Removing a number from a cell
-        pullDigit(game);
+    case 'c':
+    case 'C':
+        checkSudoku(game);
         break;
-    }
 
-    return;
-}
-
-// Function to move the cursor around the grid
-void moveCursor(int move, Game *game)
-{
-    int temp = game->cursor;
-
-    printf(DESELECT);
-    switch (move)
-    {
-    case 5: // Move the cursor up
-        if (temp > 8)
+    case 'x':
+    case 'X':
+        printf(DESELECT AT_DIFFICULTY "Difficulty: " YELLOW );
+        if (game->difficulty == EASY)
         {
-            temp -= 9;
-            printf(UP UP);
+            game->difficulty = MEDIUM;
+            printf("MEDIUM" DECOLOR);
         }
-        break;
-
-    case 2: // Move the cursor down
-        if (temp < 72)
+        else if (game->difficulty == MEDIUM)
         {
-            temp += 9;
-            printf(DOWN DOWN);
-        }
-        break;
-
-    case 3: // Move the cursor right
-        if ((temp % 9) != 8)
-        {
-            temp++;
-            printf(RIGHT RIGHT RIGHT RIGHT);
-        }
-        break;
-
-    case 1: // Move the cursor left
-        if ((temp % 9) != 0)
-        {
-            temp--;
-            printf(LEFT LEFT LEFT LEFT);
-        }
-        break;
-    }
-
-    printf(SELECT);
-    game->cursor = temp;
-
-    return;
-}
-
-// Function to check solutions entered by the user
-void checkSolution(Game* game)
-{
-    printf(DESELECT HOME SAVE);
-
-    // Printing the numbers in the cells
-    for (int i = 0; i < CELL_COUNT; i++)
-    {
-        int temp = *(game->cells + i);
-
-        printf(RIGHT);
-        if (!temp)
-            printf(YELLOW "%d", *(game->clone + i));
-        else if (temp == *(game->clone + i) && *(game->copy + i) == 0)
-            printf(GREEN "%d", temp);
-        else if (temp != *(game->clone + i) && *(game->copy + i) == 0)
-            printf(RED "%d", temp);
-        else
-            printf(RIGHT);
-        printf(DECOLOR RIGHT RIGHT);
-
-        *(game->copy + i) = 10;
-
-        // Moving to the next line
-        if (i % 9 == 8)
-            printf(LOAD DOWN DOWN SAVE);
-    }
-
-    game->cursor = 0;
-    printf(HOME SELECT);
-
-    return;
-}
-
-// Function to empty user-played cells
-void resetGame(Game* game)
-{
-    printf(DESELECT HOME SAVE);
-
-    // Printing the numbers in the cells
-    for (int i = 0; i < CELL_COUNT; i++)
-    {
-        int temp = *(game->copy + i);
-
-        printf(RIGHT);
-        if (temp == 10)
-        {
-            game->cursor = 0;
-            printf(HOME SELECT);
-            return;
-        }
-        else if (!temp)
-        {
-            printf("\xff");
-            *(game->cells + i) = 0;
+            game->difficulty = HARD;
+            printf("HARD\xff\xff" DECOLOR);
         }
         else
-            printf(RIGHT);
-        printf(DECOLOR RIGHT RIGHT);
+        {
+            game->difficulty = EASY;
+            printf("EASY\xff\xff" DECOLOR);
+        }
 
-        // Moving to the next line
-        if (i % 9 == 8)
-            printf(LOAD DOWN DOWN SAVE);
+    case 'n':
+    case 'N':
+        printf(DESELECT AT_HOME SAVE_CURSOR);
+        initializeGame(game);
+        printDigits(game->cells);
+        printf(AT_HOME SELECT SAVE_CURSOR);
+        break;
+
+    case 'e':
+    case 'E':
+        printf(DESELECT AT_EXIT SHOW_CURSOR);
+        exit(0);
     }
-
-    game->cursor = 0;
-    printf(HOME SELECT);
-
-    return;
-}
-
-// Function to adjust difficulty and start a new game
-void changeDifficulty(Game* game)
-{
-    // Printing the difficulty
-    printf(SAVE "\x1b[18;39H" "Difficulty: " YELLOW);
-
-    // Switching to the appropriate enumeration variant in the cycle
-    if (game->difficulty == EASY)
-    {
-        game->difficulty = MEDIUM;
-        printf("MEDIUM");
-    }
-    else if (game->difficulty == MEDIUM)
-    {
-        game->difficulty = HARD;
-        printf("HARD\xff\xff");
-    }
-    else if (game->difficulty == HARD)
-    {
-        game->difficulty = TEST;
-        printf("TEST\xff\xff");
-    }
-    else
-    {
-        game->difficulty = EASY;
-        printf("EASY\xff\xff");
-    }
-
-    printf(DECOLOR LOAD);
 
     return;
 }
